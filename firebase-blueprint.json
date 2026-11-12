@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A conversation thread with Sayon AI",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the session owner"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the chat session"
+        },
+        "lastMessage": {
+          "type": "string",
+          "description": "Snippet of the most recent message"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when session was created (FieldValue.serverTimestamp)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when session was last updated (FieldValue.serverTimestamp)"
+        }
+      },
+      "required": ["userId", "title", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message in a chat session",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the message sender or session owner"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "ID of the parent chat session"
+        },
+        "sender": {
+          "type": "string",
+          "enum": ["user", "sayon"],
+          "description": "Role of the message author"
+        },
+        "content": {
+          "type": "string",
+          "description": "Text content of the message"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when message was created (FieldValue.serverTimestamp)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when message was last updated (FieldValue.serverTimestamp)"
+        }
+      },
+      "required": ["userId", "sessionId", "sender", "content", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/ChatSession"
+      },
+      "description": "User conversation sessions with Sayon AI"
+    },
+    "/users/{userId}/sessions/{sessionId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
+      },
+      "description": "Messages belonging to a chat session"
+    }
+  }
+}

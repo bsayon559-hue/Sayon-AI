@@ -1,0 +1,6 @@
+{
+  "name": "Sayon AI",
+  "description": "Smart, responsive AI chat assistant with real-time streaming, conversation history, and sleek animations powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
