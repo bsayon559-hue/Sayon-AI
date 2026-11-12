@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sayon AI — Next-Gen Intelligent Companion</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%236366F1'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='45' fill='white' font-family='sans-serif' font-weight='bold'>S</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              500: '#6366F1',
+              600: '#4F46E5',
+              700: '#4338CA',
+            },
+            dark: {
+              950: '#0A0F1D',
+              900: '#0F172A',
+              800: '#1E293B',
+              700: '#334155',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s infinite ease-in-out;
+    }
+    .cursor-blink {
+      animation: blink 0.8s infinite;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-dark-950 text-slate-100 font-sans h-screen flex overflow-hidden antialiased">
+
+  <!-- Mobile Drawer Overlay -->
+  <div id="drawer-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden transition-opacity"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-dark-900 border-r border-dark-800 flex flex-col z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out">
+    <!-- Header -->
+    <div class="p-4 border-b border-dark-800 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 via-cyan-400 to-purple-500 p-0.5 flex items-center justify-center">
+          <div class="w-full h-full bg-dark-900 rounded-full flex items-center justify-center font-bold text-white text-sm">
+            AI
+          </div>
+        </div>
+        <div>
+          <h1 class="font-bold text-white text-base leading-tight">Sayon AI</h1>
+          <p class="text-xs text-slate-400">Intelligent Assistant</p>
+        </div>
+      </div>
+      <button id="close-drawer-btn" class="md:hidden text-slate-400 hover:text-white p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <!-- New Chat Button -->
+    <div class="p-3">
+      <button id="new-chat-btn" class="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg shadow-brand-600/20 transition-all text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        New Conversation
+      </button>
+    </div>
+
+    <!-- Sessions List -->
+    <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      History
+    </div>
+    <div id="session-list" class="flex-1 overflow-y-auto px-3 space-y-1">
+      <!-- Session items will be dynamically injected here -->
+    </div>
+
+    <!-- Bottom Account / Status -->
+    <div class="p-3 border-t border-dark-800 bg-dark-900/80">
+      <div class="flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Sayon AI v1.0 Online</span>
+        </div>
+        <button id="api-key-btn" title="Configure Gemini API Key" class="hover:text-brand-500 transition-colors p-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Chat Section -->
+  <main class="flex-1 flex flex-col h-full bg-dark-950 relative">
+    <!-- Top Bar -->
+    <header class="h-16 border-b border-dark-800 bg-dark-900/50 backdrop-blur flex items-center justify-between px-4 sm:px-6">
+      <div class="flex items-center gap-3">
+        <button id="open-drawer-btn" class="md:hidden text-slate-300 hover:text-white p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <div class="flex items-center gap-2">
+          <span id="session-title-display" class="font-semibold text-white text-sm sm:text-base">New Conversation</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-600/10 text-brand-500 border border-brand-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+          Gemini 3.8
+        </span>
+      </div>
+    </header>
+
+    <!-- Message Area -->
+    <div id="messages-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+      <!-- Welcome Empty State -->
+      <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto py-12">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-600 via-cyan-400 to-purple-600 p-0.5 animate-pulse-slow mb-6 shadow-xl shadow-brand-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-dark-900 rounded-full flex items-center justify-center">
+            <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">How can Sayon AI help you today?</h2>
+        <p class="text-sm text-slate-400 mb-8">Ask questions, brainstorm ideas, analyze code, or write creative content with real-time streaming.</p>
+
+        <!-- Prompt Suggestions -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full text-left">
+          <button class="prompt-chip p-3 rounded-xl bg-dark-800/80 hover:bg-dark-800 border border-dark-700/60 hover:border-brand-500/50 transition-all text-xs text-slate-200">
+            💡 Explain Quantum Computing simply
+          </button>
+          <button class="prompt-chip p-3 rounded-xl bg-dark-800/80 hover:bg-dark-800 border border-dark-700/60 hover:border-brand-500/50 transition-all text-xs text-slate-200">
+            ⚡ Brainstorm 5 startup ideas for 2026
+          </button>
+          <button class="prompt-chip p-3 rounded-xl bg-dark-800/80 hover:bg-dark-800 border border-dark-700/60 hover:border-brand-500/50 transition-all text-xs text-slate-200">
+            💻 Write a responsive modern landing page
+          </button>
+          <button class="prompt-chip p-3 rounded-xl bg-dark-800/80 hover:bg-dark-800 border border-dark-700/60 hover:border-brand-500/50 transition-all text-xs text-slate-200">
+            📝 Draft a professional project pitch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="p-4 sm:p-6 bg-dark-950/80 backdrop-blur border-t border-dark-800">
+      <div class="max-w-3xl mx-auto relative flex items-center">
+        <textarea id="prompt-input" rows="1" placeholder="Message Sayon AI..." class="w-full bg-dark-900 border border-dark-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-2xl py-3.5 pl-4 pr-14 text-sm text-white placeholder-slate-500 outline-none resize-none transition-all"></textarea>
+        <button id="send-btn" class="absolute right-2.5 w-9 h-9 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white flex items-center justify-center transition-all shadow-md">
+          <svg class="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+        </button>
+      </div>
+      <p class="text-center text-[11px] text-slate-500 mt-2">Sayon AI is powered by Gemini. Answers are generated in real-time.</p>
+    </div>
+  </main>
+
+  <script>
+    // State
+    let sessions = JSON.parse(localStorage.getItem('sayon_sessions') || '[]');
+    let currentSessionId = localStorage.getItem('sayon_active_session') || null;
+    let isGenerating = false;
+    let apiKey = localStorage.getItem('sayon_gemini_key') || '';
+
+    // DOM Elements
+    const messagesContainer = document.getElementById('messages-container');
+    const emptyState = document.getElementById('empty-state');
+    const promptInput = document.getElementById('prompt-input');
+    const sendBtn = document.getElementById('send-btn');
+    const sessionList = document.getElementById('session-list');
+    const sessionTitleDisplay = document.getElementById('session-title-display');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const apiKeyBtn = document.getElementById('api-key-btn');
+    const sidebar = document.getElementById('sidebar');
+    const drawerOverlay = document.getElementById('drawer-overlay');
+    const openDrawerBtn = document.getElementById('open-drawer-btn');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+
+    // Drawer handling
+    function openDrawer() {
+      sidebar.classList.remove('-translate-x-full');
+      drawerOverlay.classList.remove('hidden');
+    }
+    function closeDrawer() {
+      sidebar.classList.add('-translate-x-full');
+      drawerOverlay.classList.add('hidden');
+    }
+    openDrawerBtn.addEventListener('click', openDrawer);
+    closeDrawerBtn.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+
+    // API Key config modal prompt
+    apiKeyBtn.addEventListener('click', () => {
+      const entered = prompt('Enter your Gemini API Key (Optional for custom deployments, or leave blank to test locally):', apiKey);
+      if (entered !== null) {
+        apiKey = entered.trim();
+        localStorage.setItem('sayon_gemini_key', apiKey);
+        alert(apiKey ? 'API Key saved securely in your browser!' : 'API Key cleared.');
+      }
+    });
+
+    // Session Management
+    function saveSessions() {
+      localStorage.setItem('sayon_sessions', JSON.stringify(sessions));
+      localStorage.setItem('sayon_active_session', currentSessionId);
+      renderSessions();
+    }
+
+    function createNewSession(title = 'New Conversation') {
+      const newSession = {
+        id: 'sess_' + Date.now(),
+        title: title,
+        messages: [],
+        updatedAt: Date.now()
+      };
+      sessions.unshift(newSession);
+      currentSessionId = newSession.id;
+      saveSessions();
+      renderMessages();
+      closeDrawer();
+      promptInput.focus();
+    }
+
+    function renderSessions() {
+      sessionList.innerHTML = '';
+      sessions.forEach(sess => {
+        const item = document.createElement('div');
+        const isActive = sess.id === currentSessionId;
+        item.className = `group flex items-center justify-between p-2.5 rounded-xl cursor-pointer text-xs transition-all ${
+          isActive ? 'bg-dark-800 text-white font-medium border border-dark-700' : 'text-slate-400 hover:bg-dark-800/50 hover:text-slate-200'
+        }`;
+        item.innerHTML = `
+          <div class="truncate flex-1 pr-2">${escapeHtml(sess.title)}</div>
+          <button class="delete-btn opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity" title="Delete">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          </button>
+        `;
+        item.addEventListener('click', (e) => {
+          if (!e.target.closest('.delete-btn')) {
+            currentSessionId = sess.id;
+            saveSessions();
+            renderMessages();
+            closeDrawer();
+          }
+        });
+        item.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          sessions = sessions.filter(s => s.id !== sess.id);
+          if (currentSessionId === sess.id) {
+            currentSessionId = sessions.length ? sessions[0].id : null;
+          }
+          saveSessions();
+          renderMessages();
+        });
+        sessionList.appendChild(item);
+      });
+    }
+
+    function getCurrentSession() {
+      return sessions.find(s => s.id === currentSessionId);
+    }
+
+    function renderMessages() {
+      const activeSession = getCurrentSession();
+      sessionTitleDisplay.textContent = activeSession ? activeSession.title : 'New Conversation';
+
+      if (!activeSession || activeSession.messages.length === 0) {
+        messagesContainer.innerHTML = '';
+        messagesContainer.appendChild(emptyState);
+        emptyState.style.display = 'flex';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      messagesContainer.innerHTML = '';
+
+      activeSession.messages.forEach(msg => {
+        appendMessageElement(msg.role, msg.content);
+      });
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function appendMessageElement(role, content) {
+      const isUser = role === 'user';
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
+
+      if (!isUser) {
+        const avatar = document.createElement('div');
+        avatar.className = 'w-8 h-8 rounded-full bg-dark-800 border border-brand-500/40 flex-shrink-0 flex items-center justify-center text-xs font-bold text-cyan-400';
+        avatar.textContent = 'AI';
+        wrapper.appendChild(avatar);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = `max-w-[85%] sm:max-w-xl rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        isUser
+          ? 'bg-gradient-to-r from-brand-600 to-purple-600 text-white rounded-br-sm'
+          : 'bg-dark-900 border border-dark-700/80 text-slate-100 rounded-bl-sm shadow-md'
+      }`;
+
+      bubble.innerHTML = isUser
+        ? escapeHtml(content).replace(/\n/g, '<br>')
+        : formatMarkdown(content);
+
+      wrapper.appendChild(bubble);
+      messagesContainer.appendChild(wrapper);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return bubble;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatMarkdown(text) {
+      let formatted = escapeHtml(text);
+      // Code blocks
+      formatted = formatted.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, '<pre class="bg-dark-950 p-3 rounded-lg my-2 font-mono text-xs overflow-x-auto text-cyan-300"><code>$2</code></pre>');
+      // Inline code
+      formatted = formatted.replace(/`([^`]+)`/g, '<code class="bg-dark-800 text-cyan-300 px-1 py-0.5 rounded text-xs font-mono">$1</code>');
+      // Bold
+      formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+      // Newlines
+      formatted = formatted.replace(/\n/g, '<br>');
+      return formatted;
+    }
+
+    // Streaming AI Response
+    async function sendMessage(promptText) {
+      if (!promptText.trim() || isGenerating) return;
+
+      if (!currentSessionId) {
+        createNewSession(promptText.slice(0, 28) + (promptText.length > 28 ? '...' : ''));
+      }
+
+      const session = getCurrentSession();
+      if (!session) return;
+
+      if (session.messages.length === 0) {
+        session.title = promptText.slice(0, 28) + (promptText.length > 28 ? '...' : '');
+        saveSessions();
+      }
+
+      // Add user message
+      session.messages.push({ role: 'user', content: promptText });
+      saveSessions();
+      renderMessages();
+
+      promptInput.value = '';
+      promptInput.style.height = 'auto';
+      isGenerating = true;
+      sendBtn.disabled = true;
+
+      // Create streaming placeholder bubble
+      const streamBubble = appendMessageElement('model', '');
+      streamBubble.innerHTML = '<span class="inline-flex items-center gap-1.5 text-slate-400 italic text-xs"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>Sayon AI is thinking...</span>';
+
+      try {
+        let fullResponse = '';
+        if (apiKey) {
+          // Direct Gemini REST API call with user-provided key
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: session.messages.map(m => ({
+                role: m.role === 'user' ? 'user' : 'model',
+                parts: [{ text: m.content }]
+              }))
+            })
+          });
+
+          if (!response.ok) throw new Error(`API returned ${response.status}`);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const textChunk = decoder.decode(value);
+            const lines = textChunk.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.substring(6));
+                  const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                  fullResponse += candidate;
+                  streamBubble.innerHTML = formatMarkdown(fullResponse) + '<span class="cursor-blink text-cyan-400 font-bold ml-0.5">▍</span>';
+                  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } catch (e) {}
+              }
+            }
+          }
+        } else {
+          // Responsive Simulated Streaming when deployed statically without server key
+          const simulatedIntro = "Hello! I am Sayon AI, your intelligent companion. Here is what I can share regarding your query:\n\n";
+          const points = [
+            "• **Clarity & Architecture**: When building modern applications, clean component separation and reactive states create an optimal user experience.\n",
+            "• **Real-Time Streaming**: Streaming responses immediately reduce perceived delay and provide instant feedback.\n",
+            "• **Key Integration**: To connect live Gemini API directly from GitHub Pages, click the gear icon at the bottom left to enter your Gemini API key!\n\n",
+            "Feel free to ask me anything further or try another prompt!"
+          ];
+          const streamText = simulatedIntro + points.join('');
+          const words = streamText.split(' ');
+
+          for (let i = 0; i < words.length; i++) {
+            fullResponse += (i === 0 ? '' : ' ') + words[i];
+            streamBubble.innerHTML = formatMarkdown(fullResponse) + '<span class="cursor-blink text-cyan-400 font-bold ml-0.5">▍</span>';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            await new Promise(r => setTimeout(r, 45));
+          }
+        }
+
+        streamBubble.innerHTML = formatMarkdown(fullResponse);
+        session.messages.push({ role: 'model', content: fullResponse });
+        saveSessions();
+      } catch (err) {
+        streamBubble.innerHTML = `<span class="text-red-400">Error generating response: ${escapeHtml(err.message)}</span>`;
+      } finally {
+        isGenerating = false;
+        sendBtn.disabled = false;
+      }
+    }
+
+    // Event Listeners
+    sendBtn.addEventListener('click', () => sendMessage(promptInput.value));
+    promptInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(promptInput.value);
+      }
+    });
+
+    // Auto-expand textarea
+    promptInput.addEventListener('input', () => {
+      promptInput.style.height = 'auto';
+      promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
+    });
+
+    newChatBtn.addEventListener('click', () => createNewSession());
+
+    // Prompt Chips
+    document.querySelectorAll('.prompt-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const text = chip.textContent.replace(/^[^\w]+/, '').trim();
+        sendMessage(text);
+      });
+    });
+
+    // Init
+    if (sessions.length === 0) {
+      createNewSession();
+    } else {
+      if (!currentSessionId) currentSessionId = sessions[0].id;
+      renderSessions();
+      renderMessages();
+    }
+  </script>
+</body>
+</html>
